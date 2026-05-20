@@ -15,3 +15,5 @@ supabase/functions/.env.local
 .idea/
 .vscode/
 
+package-lock.json
+**/package-lock.json
