@@ -1,0 +1,21 @@
+{
+  "name": "home-budgeting-backend",
+  "version": "0.2.0",
+  "nodeModulesDir": "auto",
+  "tasks": {
+    "test": "deno test --allow-env --allow-net=deno.land,jsr.io,registry.npmjs.org supabase/functions/**/*_test.ts",
+    "test:watch": "deno test --allow-env --allow-net=deno.land,jsr.io,registry.npmjs.org --watch supabase/functions/**/*_test.ts",
+    "check": "deno check supabase/functions/**/*.ts"
+  },
+  "lint": {
+    "include": ["supabase/functions/"]
+  },
+  "fmt": {
+    "include": ["supabase/functions/"],
+    "lineWidth": 100,
+    "singleQuote": false
+  },
+  "imports": {
+    "jsr:@std/assert@1": "jsr:@std/assert@^1.0.0"
+  }
+}
