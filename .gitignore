@@ -1,2 +1,17 @@
 .env
+.env.local
+**/.env
+**/.env.local
 node_modules/
+.deno/
+
+# Supabase CLI local state
+supabase/.branches/
+supabase/.temp/
+supabase/functions/.env.local
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
