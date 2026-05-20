@@ -1,0 +1,46 @@
+# Supabase project configuration.
+# https://supabase.com/docs/reference/cli/config
+#
+# `project_id` is filled in once `supabase init` is run against a real project,
+# or by `supabase link --project-ref <ref>`.
+project_id = "home-budgeting"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+# Magic-link / OTP is the MVP auth path. Apple + Google can be added later
+# under [auth.external.apple] / [auth.external.google] without schema changes
+# since auth.users.id is the stable foreign key.
+
+[functions]
+# Edge Functions inherit env from `supabase/functions/.env.local` during local
+# dev and from project secrets in deployed environments.
+verify_jwt = true
