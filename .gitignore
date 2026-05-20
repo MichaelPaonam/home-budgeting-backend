@@ -17,3 +17,6 @@ supabase/functions/.env.local
 
 package-lock.json
 **/package-lock.json
+
+deno-lock.json
+**/deno-lock.json
