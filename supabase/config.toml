@@ -40,7 +40,11 @@ enable_confirmations = true
 # under [auth.external.apple] / [auth.external.google] without schema changes
 # since auth.users.id is the stable foreign key.
 
-[functions]
-# Edge Functions inherit env from `supabase/functions/.env.local` during local
-# dev and from project secrets in deployed environments.
+[functions.reports-monthly]
+verify_jwt = true
+
+[functions.transactions-bulk-import]
+verify_jwt = true
+
+[functions.push-register-device]
 verify_jwt = true
