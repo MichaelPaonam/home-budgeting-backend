@@ -74,6 +74,55 @@ Transactions reference accounts with `ON DELETE RESTRICT` — archive accounts, 
 
 12 defaults are seeded for every new user by `seed_default_categories(uid)` (called from the auth trigger).
 
+#### Design note: per-user category rows
+
+Categories are stored as one row per user, even for the 12 defaults. Two users with "Groceries" hold two rows that share a name but nothing else.
+
+This is deliberate, not an oversight. Reasons:
+
+1. **Users will customise.** Renames, splits, archives, color/icon edits, custom additions. The moment categories are user-editable they are user data, and a shared catalog forces a copy-on-write migration the first time anyone edits anything.
+2. **RLS stays simple.** `using (user_id = auth.uid())` works the same as every other table. A shared catalog needs `user_id = auth.uid() OR user_id IS NULL`, which complicates every join and policy.
+3. **`transactions.category_id` is a plain FK.** No special-casing for "is this global or personal" in reports/aggregations.
+4. **Storage is irrelevant.** 12 rows × ~200 B × N users. Not a real cost at any plausible scale.
+
+Tradeoffs we accept:
+
+- Adding a new default category does **not** propagate to existing users automatically. Backfill recipe below.
+- Cross-user analytics ("what % of users spent on Groceries this month") have to match by name, which is fuzzy once users rename. Acceptable — not a launch-blocking metric.
+- Localisation of default names is not handled. The seed function hardcodes English. If/when we localise, pass a locale into `seed_default_categories(uid, locale)` and branch the insert.
+
+#### Future-scope improvements (not yet applied)
+
+When we want to enable "Reset to defaults", "What changed in defaults", or cross-user analytics on stable identifiers, add:
+
+1. **`slug` column** — stable identifier across user renames.
+   ```sql
+   alter table public.categories add column slug text;
+   update public.categories set slug = lower(regexp_replace(name, '\s+', '_', 'g'));
+   alter table public.categories alter column slug set not null;
+   create unique index categories_user_slug_kind_idx on public.categories (user_id, slug, kind);
+   ```
+   Update `seed_default_categories()` to write `slug = 'groceries'`, `'dining'`, etc. Renames change `name`, never `slug`.
+
+2. **`is_default` boolean** — distinguish system-seeded rows from user-created ones, so a "Reset defaults" feature is unambiguous.
+   ```sql
+   alter table public.categories add column is_default boolean not null default false;
+   ```
+   Seed function sets `true`; any user edit on those fields can flip to `false` if we want to track "user has diverged from default".
+
+3. **Backfill recipe for new defaults.** When adding e.g. "Subscriptions" to the seed list, also run:
+   ```sql
+   insert into public.categories (user_id, name, slug, kind, icon, is_default)
+   select id, 'Subscriptions', 'subscriptions', 'expense', 'repeat', true
+   from auth.users
+   on conflict (user_id, slug, kind) do nothing;
+   ```
+   Ship this in the same migration that updates `seed_default_categories()`. New signups get it from the seed; existing users get it from the backfill.
+
+4. **Locale-aware seeding** (only when we localise the apps). Add `locale` to `profiles`, pass it to a `seed_default_categories(uid uuid, locale text)`, branch on locale to insert translated names while keeping `slug` stable.
+
+None of these are needed today. Add them when the corresponding product feature lands.
+
 ---
 
 ### `transactions`
